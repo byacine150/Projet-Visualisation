@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "functions": {
+    "app.py": {
+      "runtime": "python"
+    }
+  }
+}
