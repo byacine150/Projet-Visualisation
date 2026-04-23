@@ -3,11 +3,10 @@
 '''
 import os
 import pandas as pd
-from modes import MODE_TO_COLUMN
 
 _DIR = os.path.dirname(__file__)
 
-# Fusions de PDQ selon les réorganisations du SPVM
+# Fusions of PDQ according to SPVM
 # PDQ 11 → 9  : https://rapportspvm2020.ca/grands-dossiers/pdq%E2%80%AF9-et-11%E2%80%AF-integrer-pour-mieux-servir/
 # PDQ 22 → 21 : https://ici.radio-canada.ca/nouvelle/2150663/spvm-poste-quartier-centre-ville-police-drogue-securite
 # PDQ 24 → 26 : https://spvm.qc.ca/fr/PDQ26/Actualites/14249
@@ -131,6 +130,23 @@ def count_by_pdq(df, geojson):
     counts['Nombre de crimes'] = counts['Nombre de crimes'].astype(int)
     counts['Quartier'] = counts['PDQ'].map(PDQ_NOMS)
     return counts
+
+def get_borough_categories(df_pdq):
+    '''
+    Returns a sorted list of crime categories, excluding PDQ 50 (metro network).
+    '''
+    return sorted(df_pdq[df_pdq['PDQ'] != '50']['CATEGORIE'].unique().tolist())
+
+
+def split_metro(df_pdq):
+    '''
+    Splits the PDQ dataframe into borough rows and metro (PDQ 50) rows.
+
+    Returns:
+        (df_boroughs, df_metro)
+    '''
+    return df_pdq[df_pdq['PDQ'] != '50'].copy(), df_pdq[df_pdq['PDQ'] == '50'].copy()
+
 
 def prepare_tendances_data(df):
     '''

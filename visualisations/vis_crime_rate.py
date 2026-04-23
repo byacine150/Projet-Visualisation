@@ -5,7 +5,7 @@ from template import THEME
 
 def get_figure(df_crime_rate):
     categories = df_crime_rate['CATEGORIE'].unique().tolist()
-    couleurs = {cat: THEME['bar_colors'][i % len(THEME['bar_colors'])]
+    colors = {cat: THEME['bar_colors'][i % len(THEME['bar_colors'])]
                 for i, cat in enumerate(categories)}
 
     fig = px.area(
@@ -13,7 +13,7 @@ def get_figure(df_crime_rate):
         x='Annee',
         y='Taux_100k',
         color='CATEGORIE',
-        color_discrete_map=couleurs,
+        color_discrete_map=colors,
         labels={
             'Taux_100k': 'Infractions par 100k habitants',
             'Annee': 'Année',
@@ -59,16 +59,22 @@ def get_figure(df_crime_rate):
 
 def create_layout(df_crime_rate):
     return html.Div(style={'padding': '20px 0'}, children=[
-        dcc.Graph(
-            id='crime-rate-chart',
-            figure=get_figure(df_crime_rate),
-            config=dict(
-                scrollZoom=False,
-                showTips=False,
-                showAxisDragHandles=False,
-                doubleClick=False,
-                displayModeBar=False,
-            ),
-            style={'height': '500px'},
+        html.Div(
+            **{'aria-label': 'Graphique en aires de l\'évolution du taux de criminalité par 100 000 habitants à Montréal de 2015 à 2024, réparti par catégorie d\'infraction : vol dans ou sur véhicule à moteur, introduction, méfait, vol de véhicule à moteur, vols qualifiés, et infractions entraînant la mort. Le taux global a diminué jusqu\'en 2020, puis a fortement augmenté jusqu\'en 2023 avant de redescendre. Cliquez sur la légende pour afficher ou masquer une catégorie.'},
+            role='img',
+            children=[
+                dcc.Graph(
+                    id='crime-rate-chart',
+                    figure=get_figure(df_crime_rate),
+                    config=dict(
+                        scrollZoom=False,
+                        showTips=False,
+                        showAxisDragHandles=False,
+                        doubleClick=False,
+                        displayModeBar=False,
+                    ),
+                    style={'height': '500px'},
+                )
+            ],
         )
     ])

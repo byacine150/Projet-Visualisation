@@ -15,12 +15,31 @@ from dash import html, dcc
 import pandas as pd
 
 import preprocess
-from visualisations import vis_arrondissement, vis_crime_rate, vis_crimes_saison, vis_moment_journee, vis_tendances
+from visualisations import vis_borough, vis_crime_rate, vis_crimes_season, vis_time_of_day, vis_trends
 from template import create_template
 
 
 app = dash.Dash(__name__)
 app.title = 'Crimes Mtl'
+app.index_string = '''
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 csv_path = os.path.join(os.path.dirname(__file__), 'assets', 'data', 'actes-criminels.csv')
 df= pd.read_csv(csv_path)
@@ -35,7 +54,7 @@ create_template()
 app.layout = html.Div(className='app-container', children=[
     html.Header(className='app-header', children=[
         html.Div(className='header-title-row', children=[
-            html.Img(src='/assets/favicon.ico', className='header-favicon'),
+            html.Img(src='/assets/favicon.ico', className='header-favicon', alt=''),
             html.H1('Les crimes à Montréal', className='header-title'),
         ]),
         html.H2('Évolution et tendances des infractions', className='header-subtitle')
@@ -88,7 +107,7 @@ app.layout = html.Div(className='app-container', children=[
                 
                 html.Div(className='viz-container', children=[
                     html.P('''Par après, il est aussi pertinent de se poser la question si les saisons ont font une différence dans le taux de crimes à Montréal. En effet, on peut se demander si les mois d’été sont plus propices à la criminalité que les mois d’hiver. Le graphique ci-dessous permet de répondre à cette question en montrant le nombre total de crimes commis à Montréal par mois pour chaque année entre 2015 et 2024.'''),
-                    vis_crimes_saison.create_layout(df_monthly),
+                    vis_crimes_season.create_layout(df_monthly),
                     html.P('''Il y a une plus grande abondance des crimes que l’on peut observer en général entre les mois d’avril/mai jusqu’à octobre/novembre. Les périodes hivernales sont les périodes qui représentent le moins de criminalité. '''),
                     html.P('''Nous pouvons conclure que lorsqu’il commence à faire plus chaud, les gens sortent davantage et participent à plus d’événements. Par exemple, aller au parc, festivals, terrasses, etc. Il y a donc une augmentation des interactions sociales, alors il y a plus d’occasions de conflits, de vols, etc. Ce qui est contraire pour l’hiver où il risque que les gens aient plus tendance à rester à la maison et avoir moins d'interactions. '''),
                     html.P('''Selon une étude aussi, les températures plus chaudes peuvent représenter une agressivité plus grande et augmenter les conflits interpersonnels. Cela peut aussi expliquer l’augmentation des crimes violents durant les mois les plus chauds comme des pics en été où des vagues de chaleur sont plus propices. ''')
@@ -100,7 +119,7 @@ app.layout = html.Div(className='app-container', children=[
                 html.H3('Crimes par Arrondissement'),
                 html.Div(className='viz-container viz-container--map', children=[
                     html.P('''Au-delà des tendances temporelles, il est pertinent de se demander si les crimes sont répartis uniformément sur le territoire montréalais ou s'ils se concentrent dans certains quartiers. En examinant la distribution spatiale des infractions par Poste de Quartier (PDQ) du SPVM, on peut mieux comprendre quelles zones sont les plus touchées et si cette répartition varie selon le type de crime.'''),
-                    vis_arrondissement.create_layout(df_pdq),
+                    vis_borough.create_layout(df_pdq),
                     html.P('''On constate que les crimes sont fortement concentrés dans les PDQ du centre-ville et des quartiers centraux, là où la densité de population et l'activité humaine sont les plus élevées. Ce phénomène rejoint l'observation du criminologue Rémi Boivin : « Les cartes du crime, ce sont des cartes de l'activité humaine. » En effet, les zones à forte fréquentation comme les commerces, transports et lieux de divertissement sont naturellement associées à une criminalité plus importante.'''),
                     html.P('''En revanche, les vols de véhicules à moteur présentent une distribution plus uniforme à travers l'île, sans se concentrer exclusivement au centre. Ce type d'infraction cible davantage les voitures stationnées dans les quartiers résidentiels, ce qui explique sa répartition plus homogène sur l'ensemble du territoire montréalais.'''),
                 ])
@@ -111,7 +130,7 @@ app.layout = html.Div(className='app-container', children=[
                 html.H3('Crimes par moment de la journée'),
                 html.Div(className='viz-container', children=[
                     html.P('''Il est naturel d'associer la criminalité à la nuit, mais les données montréalaises révèlent une réalité différente. Le graphique ci-dessous présente le nombre total d'infractions par catégorie de crime, réparties selon trois moments de la journée: jour, soir et nuit. Les catégories sont ordonnées de la plus fréquente à la moins fréquente pour mettre en évidence les infractions les plus courantes.'''),
-                    vis_moment_journee.create_layout(df_moment),
+                    vis_time_of_day.create_layout(df_moment),
                     html.P('''On constate que la majorité des crimes surviennent pendant le jour, ce qui peut aller à l'encontre de l'intuition. Cela s'explique par le fait que les infractions les plus courantes, comme les vols dans ou sur véhicule à moteur, surviennent dans des espaces publics fréquentés pendant la journée. La seule grosse exception c'est les vols qualifiés, qui sont plus fréquents le soir.'''),
                     html.P('''Les crimes contre la propriété sont beaucoup plus nombreux que les crimes contre la personne, pour n'importe quel moment de la journée. Les vols dans ou sur véhicule à moteur représentent l'infraction la plus fréquente, tandis que les infractions entraînant la mort sont les moins nombreuses. Même en filtrant uniquement les crimes de nuit, les crimes contre la proprité restent les plus nombreux, avec les vols de voitures comme les plus nombreux.'''),
                 ])
@@ -122,7 +141,7 @@ app.layout = html.Div(className='app-container', children=[
                 html.H3('Tendances des crimes'),
                 html.Div(className='viz-container', children=[
                     html.P('''Ensuite, il serait pertinent de voir si certains types de crimes sont plus populaires que les autres et si certains crimes suivent une tendance différente par rapport aux autres. Le graphique ci-dessous montre l'évolution de la proportion de chaque catégorie d'infraction par rapport au nombre total de crimes commis à Montréal pour chaque année. '''),
-                    vis_tendances.create_layout(df_tendances),
+                    vis_trends.create_layout(df_tendances),
                     html.P('''Avec le graphique, on peut voir qu'en général, chaque type de crime a tendance à garder une proportion similaire à travers les années. Toutefois, nous pouvons voir que la proportion d'introduction par effraction monte considérablement entre les années 2019 et 2023 avant de redescendre durant les deux prochaines années. La hausse pourrait certainement être liée à la pandémie en raison d'une diminution de gens dans les commerces par exemple. Pour la baisse, le Gouvernement du Canada a annoncé des lois concernant les peines plus sévères sur plusieurs types de crime incluant les introductions par effraction.'''),
                     html.P('''Concernant la proportion de crimes violents comparé aux crimes contre les biens, nous pouvons voir que les crimes violents représentent une minorité de la totalité des crimes, ce qui est inférieur à la moyenne canadienne.'''),
                 ])
@@ -154,7 +173,7 @@ app.layout = html.Div(className='app-container', children=[
     ])
 ])
 
-vis_arrondissement.register_callbacks(app, df_pdq)
-vis_crimes_saison.register_callbacks(app, df)
-vis_moment_journee.register_callbacks(app, df_moment)
-vis_tendances.register_callbacks(app, df_tendances)
+vis_borough.register_callbacks(app, df_pdq)
+vis_crimes_season.register_callbacks(app, df)
+vis_time_of_day.register_callbacks(app, df_moment)
+vis_trends.register_callbacks(app, df_tendances)

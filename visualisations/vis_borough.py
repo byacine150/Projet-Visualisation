@@ -1,5 +1,5 @@
 '''
-    Distribution spatiale des crimes par arrondissement (PDQ)
+    Spatial distribution of crimes by borough (PDQ)
 '''
 
 import os
@@ -16,7 +16,7 @@ GEOJSON_PATH = os.path.join(_DIR, 'assets', 'data', 'limitespdq_wgs84.geojson')
 
 COLORSCALE = [[0, 'white'], [0.0001, '#fee5d9'], [0.5, '#fc4e2a'], [1, '#67000d']]
 
-# GeoJSON des PDQ — Source : Ville de Montréal – Données ouvertes
+# PDQ GeoJSON — Source: Ville de Montréal – Open Data
 # https://donnees.montreal.ca/dataset/limites-pdq-spvm
 with open(GEOJSON_PATH, encoding='utf-8') as f:
     pdq_geojson = json.load(f)
@@ -61,7 +61,7 @@ def get_figure(counts, label_cat):
 
 
 def create_layout(df_pdq):
-    categories = sorted(df_pdq[df_pdq['PDQ'] != '50']['CATEGORIE'].unique().tolist())
+    categories = preprocess.get_borough_categories(df_pdq)
     return html.Div([
         html.Div(
             style={'width': '380px', 'margin': '0 auto 16px'},
@@ -102,8 +102,17 @@ def create_layout(df_pdq):
         ),
 
         dcc.Loading(type='circle', color='#AD1F3E', children=[
-            dcc.Graph(id='arrondissement-choropleth-map', style={'height': '560px'},
-                      config={'scrollZoom': False, 'displayModeBar': False}),
+            html.Div(
+                **{'aria-label': 'Carte choroplèthe interactive des crimes par poste de quartier (PDQ) du SPVM à Montréal, de 2015 à 2025. Les zones plus foncées indiquent un nombre de crimes plus élevé. Utilisez le menu déroulant pour filtrer par catégorie d\'infraction, et le bouton de réinitialisation pour revenir à la vue d\'ensemble de l\'île.'},
+                role='img',
+                children=[
+                    dcc.Graph(
+                        id='arrondissement-choropleth-map',
+                        style={'height': '560px'},
+                        config={'scrollZoom': False, 'displayModeBar': False},
+                    )
+                ],
+            ),
         ]),
 
         html.Div(
@@ -131,8 +140,7 @@ def create_layout(df_pdq):
 
 
 def register_callbacks(app, df_pdq):
-    df_arrondissement = df_pdq[df_pdq['PDQ'] != '50'].copy()
-    df_metro          = df_pdq[df_pdq['PDQ'] == '50'].copy()
+    df_arrondissement, df_metro = preprocess.split_metro(df_pdq)
 
     @app.callback(
         Output('arrondissement-choropleth-map', 'figure'),

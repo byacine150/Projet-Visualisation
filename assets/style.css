@@ -188,7 +188,6 @@ button {
     border: 1px solid #333;
     border-radius: 4px;
     cursor: pointer;
-    outline: 0;
     font-family: 'Montserrat', 'sans-serif';
     font-size: 16px;
 }
@@ -196,6 +195,11 @@ button {
 button:hover, button:active {
 	background:linear-gradient(to bottom, #f6f6f6 5%, #ffffff 100%);
 	background-color:#f6f6f6;
+}
+
+button:focus-visible {
+    outline: 3px solid #AD1F3E;
+    outline-offset: 2px;
 }
 
 .content {

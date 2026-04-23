@@ -1,5 +1,5 @@
 '''
-    Heatmap des crimes par mois et par année, avec délimitation des saisons.
+    Heatmap of crimes by month and year, with season boundaries.
 '''
 
 import plotly.graph_objects as go
@@ -9,16 +9,16 @@ from dash.exceptions import PreventUpdate
 from template import THEME
 import preprocess
 
-MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
+MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
 
-SAISONS = [
+SEASONS = [
     {'x': 0.06,  'text': 'Hiver'},
     {'x': 0.31,  'text': 'Printemps'},
     {'x': 0.56,  'text': 'Été'},
     {'x': 0.81,  'text': 'Automne'},
 ]
 
-# Indices des mois qui débutent une nouvelle saison (après Mar, Juin, Sep)
+# Month labels that start a new season (after Mar, Juin, Sep)
 SEASON_BOUNDARIES = ['Mar', 'Juin', 'Sep']
 
 COLORSCALE = [
@@ -48,7 +48,7 @@ def get_figure(pivot):
         fig.add_trace(
             go.Heatmap(
                 z=[row_data],
-                x=MOIS,
+                x=MONTHS,
                 y=[''],
                 colorscale=COLORSCALE,
                 zmin=row_min,
@@ -84,7 +84,7 @@ def get_figure(pivot):
                 col=1,
             )
 
-    for ann in SAISONS:
+    for ann in SEASONS:
         fig.add_annotation(
             x=ann['x'],
             y=1.07,
@@ -140,14 +140,20 @@ def create_layout(pivot):
                 'marginBottom': '8px',
             }
         ),
-        dcc.Graph(
-            id='crimes-saison-heatmap',
-            figure=get_figure(pivot),
-            config=dict(
-                scrollZoom=False,
-                showTips=False,
-                displayModeBar=False,
-            ),
+        html.Div(
+            **{'aria-label': 'Carte thermique des crimes à Montréal par mois et par année, de 2015 à 2024. Chaque ligne représente une année et chaque colonne un mois. Les couleurs vont du blanc (peu de crimes) au rouge foncé (beaucoup de crimes). Des lignes verticales bleues délimitent les quatre saisons. Les mois d\'été (mai à octobre) concentrent systématiquement le plus grand nombre d\'infractions. Ce graphique se met à jour automatiquement selon la catégorie sélectionnée dans le graphique d\'évolution annuelle ci-dessus.'},
+            role='img',
+            children=[
+                dcc.Graph(
+                    id='crimes-saison-heatmap',
+                    figure=get_figure(pivot),
+                    config=dict(
+                        scrollZoom=False,
+                        showTips=False,
+                        displayModeBar=False,
+                    ),
+                )
+            ],
         )
     ])
 
