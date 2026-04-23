@@ -1,10 +1,9 @@
 '''
-    Tendances des crimes à Montréal — proportions par catégorie (2015-2025)
+    Crime trends in Montreal — proportions by category (2015-2025)
 '''
 
 import plotly.graph_objects as go
 import dash
-import pandas as pd
 import preprocess
 from dash import dcc, html, Input, Output, State
 from template import THEME
@@ -29,7 +28,7 @@ COLORS = {
     'Infractions entrainant la mort':    '#F5C4B3',
 }
 
-COLOR_BIENS   = COLORS['Introduction']
+COLOR_PROPERTY   = COLORS['Introduction']
 COLOR_VIOLENT = COLORS['Vols qualifiés']
 
 def get_figure(pct, visible_categories=None):
@@ -66,7 +65,7 @@ def get_figure(pct, visible_categories=None):
             legendgrouptitle=dict(
                 text='Crimes violents' if is_violent else 'Crimes contre les biens',
                 font=dict(family='Space Mono, monospace', size=11,
-                          color=COLOR_VIOLENT if is_violent else COLOR_BIENS),
+                          color=COLOR_VIOLENT if is_violent else COLOR_PROPERTY),
             ),
             line=dict(
                 color=color,
@@ -130,14 +129,20 @@ def get_figure(pct, visible_categories=None):
 
 def create_layout(pct):
     return html.Div(style={'padding': '20px 0'}, children=[
-        dcc.Graph(
-            id='tendances-line-chart',
-            figure=get_figure(pct),
-            config=dict(
-                scrollZoom=False,
-                showTips=False,
-                displayModeBar=False,
-            ),
+        html.Div(
+            **{'aria-label': 'Graphique en courbes des tendances de proportion de chaque catégorie de crime à Montréal entre 2015 et 2025. L\'axe vertical représente le pourcentage de chaque catégorie sur le total annuel des infractions. Les crimes contre les biens (introduction, méfait, vol dans ou sur véhicule, vol de véhicule) sont en pointillés ; les crimes violents (vols qualifiés, infractions entraînant la mort) sont en trait plein. La proportion d\'introductions par effraction a fortement augmenté entre 2019 et 2023. Utilisez les boutons sous le graphique pour filtrer par groupe.'},
+            role='img',
+            children=[
+                dcc.Graph(
+                    id='tendances-line-chart',
+                    figure=get_figure(pct),
+                    config=dict(
+                        scrollZoom=False,
+                        showTips=False,
+                        displayModeBar=False,
+                    ),
+                )
+            ],
         ),
         html.Div(
             style={
@@ -147,9 +152,9 @@ def create_layout(pct):
                 'gap': '12px',
             },
             children=[
-                html.Div('Tous', id='tendances-btn-all', n_clicks=0),
-                html.Div('Crimes contre les biens', id='tendances-btn-biens', n_clicks=0),
-                html.Div('Crimes violents', id='tendances-btn-violent', n_clicks=0),
+                html.Button('Tous', id='tendances-btn-all', n_clicks=0),
+                html.Button('Crimes contre les biens', id='tendances-btn-property', n_clicks=0),
+                html.Button('Crimes violents', id='tendances-btn-violent', n_clicks=0),
             ],
         ),
     ])
@@ -163,13 +168,13 @@ def register_callbacks(app, pct):
     @app.callback(
         Output('tendances-line-chart', 'figure'),
         Output('tendances-btn-all', 'style'),
-        Output('tendances-btn-biens', 'style'),
+        Output('tendances-btn-property', 'style'),
         Output('tendances-btn-violent', 'style'),
         Input('tendances-btn-all', 'n_clicks'),
-        Input('tendances-btn-biens', 'n_clicks'),
+        Input('tendances-btn-property', 'n_clicks'),
         Input('tendances-btn-violent', 'n_clicks'),
     )
-    def update_chart(n_all, n_biens, n_violent):
+    def update_chart(n_all, n_property, n_violent):
         from dash import ctx
  
         btn_base = {
@@ -194,7 +199,7 @@ def register_callbacks(app, pct):
  
         triggered = ctx.triggered_id
  
-        if triggered == 'tendances-btn-biens':
+        if triggered == 'tendances-btn-property':
             return (get_figure(pct, visible_categories=property_categories),
                     btn_base, btn_active, btn_base)
         elif triggered == 'tendances-btn-violent':

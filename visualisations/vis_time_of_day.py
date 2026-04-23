@@ -1,27 +1,27 @@
 '''
-    Graphique à barres groupées des infractions par catégorie et moment de la journée.
+    Grouped bar chart of offences by category and time of day.
 '''
 
 import plotly.graph_objects as go
 from dash import dcc, html, Input, Output
 from template import THEME
 
-# Mapping moment → label affiché & couleur thématique
+# Mapping time-of-day key → display label & theme color
 MOMENTS = {
     'jour': {'label': 'Jour', 'color': '#e48d3c'},
     'soir': {'label': 'Soir', 'color': '#AD1F3E'},
     'nuit': {'label': 'Nuit', 'color': '#2b2d42'},
 }
 
-# Catégories de crimes séparées en deux groupes (propriété / personne)
-CRIMES_PROPRIETE = [
+# Crime categories split into two groups (property / persons)
+CRIMES_PROPERTY = [
     'Vol dans / sur véhicule à moteur',
     'Introduction',
     'Méfait',
     'Vol de véhicule à moteur',
 ]
 
-CRIMES_PERSONNE = [
+CRIMES_PERSONS = [
     'Vols qualifiés',
     'Infractions entrainant la mort',
 ]
@@ -44,19 +44,19 @@ def get_figure(df_moment, filter_mode='all'):
 
     Args:
         df_moment: DataFrame with columns [CATEGORIE, QUART, Nombre].
-        filter_mode: 'all', 'prop', or 'pers'.
+        filter_mode: 'all', 'prop', or 'persons'.
     Returns:
         A plotly Figure.
     '''
     # Order categories: propriété (descending total) then personne (descending total)
     cat_totals = df_moment.groupby('CATEGORIE')['Nombre'].sum()
 
-    prop_cats = [c for c in sorted(CRIMES_PROPRIETE, key=lambda c: cat_totals.get(c, 0), reverse=True)]
-    pers_cats = [c for c in sorted(CRIMES_PERSONNE, key=lambda c: cat_totals.get(c, 0), reverse=True)]
+    prop_cats = [c for c in sorted(CRIMES_PROPERTY, key=lambda c: cat_totals.get(c, 0), reverse=True)]
+    pers_cats = [c for c in sorted(CRIMES_PERSONS, key=lambda c: cat_totals.get(c, 0), reverse=True)]
 
     if filter_mode == 'prop':
         ordered_cats = prop_cats
-    elif filter_mode == 'pers':
+    elif filter_mode == 'persons':
         ordered_cats = pers_cats
     else:
         ordered_cats = prop_cats + pers_cats
@@ -172,14 +172,20 @@ def create_layout(df_moment):
     Returns the Dash layout component for this visualisation.
     '''
     return html.Div(style={'padding': '20px 0'}, children=[
-        dcc.Graph(
-            id='moment-journee-chart',
-            figure=get_figure(df_moment, 'all'),
-            config=dict(
-                scrollZoom=False,
-                showTips=False,
-                displayModeBar=False,
-            ),
+        html.Div(
+            **{'aria-label': 'Graphique à barres groupées des infractions criminelles à Montréal de 2015 à 2025, selon la catégorie et le moment de la journée (jour, soir, nuit). Les crimes contre la propriété (vol dans ou sur véhicule, introduction, méfait, vol de véhicule) sont présentés à gauche, et les crimes contre la personne (vols qualifiés, infractions entraînant la mort) à droite. La majorité des infractions surviennent le jour. Utilisez les boutons sous le graphique pour filtrer par groupe de crimes.'},
+            role='img',
+            children=[
+                dcc.Graph(
+                    id='moment-of-day-chart',
+                    figure=get_figure(df_moment, 'all'),
+                    config=dict(
+                        scrollZoom=False,
+                        showTips=False,
+                        displayModeBar=False,
+                    ),
+                )
+            ],
         ),
         html.Div(
             style={
@@ -192,22 +198,22 @@ def create_layout(df_moment):
                 'gap': '12px'
             },
             children=[
-                html.Div('Toutes les infractions', id='btn-all', n_clicks=0),
-                html.Div('Crimes contre la propriété', id='btn-prop', n_clicks=0),
-                html.Div('Crimes contre la personne', id='btn-pers', n_clicks=0),
+                html.Button('Toutes les infractions', id='btn-all', n_clicks=0),
+                html.Button('Crimes contre la propriété', id='btn-prop', n_clicks=0),
+                html.Button('Crimes contre la personne', id='btn-persons', n_clicks=0),
             ]
         )
     ])
 
 def register_callbacks(app, df_moment):
     @app.callback(
-        Output('moment-journee-chart', 'figure'),
+        Output('moment-of-day-chart', 'figure'),
         Output('btn-all', 'style'),
         Output('btn-prop', 'style'),
-        Output('btn-pers', 'style'),
+        Output('btn-persons', 'style'),
         Input('btn-all', 'n_clicks'),
         Input('btn-prop', 'n_clicks'),
-        Input('btn-pers', 'n_clicks'),
+        Input('btn-persons', 'n_clicks'),
     )
     def update_chart(btn_all, btn_prop, btn_pers):
         from dash import ctx
@@ -235,7 +241,7 @@ def register_callbacks(app, df_moment):
         triggered_id = ctx.triggered_id
         if triggered_id == 'btn-prop':
             return get_figure(df_moment, 'prop'), btn_base_style, btn_active_style, btn_base_style
-        elif triggered_id == 'btn-pers':
-            return get_figure(df_moment, 'pers'), btn_base_style, btn_base_style, btn_active_style
+        elif triggered_id == 'btn-persons':
+            return get_figure(df_moment, 'persons'), btn_base_style, btn_base_style, btn_active_style
         else:
             return get_figure(df_moment, 'all'), btn_active_style, btn_base_style, btn_base_style
